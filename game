@@ -1,0 +1,6 @@
+#!/bin/bash
+
+[ ! -d ".venv" ] && printf "Please, first (by double click or terminal) run ./setup file\n" && exit
+source .venv/bin/activate
+
+python3 src/game.py

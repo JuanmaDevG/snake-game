@@ -1,0 +1,8 @@
+#!/bin/bash
+
+[ ! -d ".venv" ] && python3 -m venv .venv
+source ./.venv/bin/activate
+
+if [ -n $(find "./.venv" -type d -name "pygame" -quit) ]; then
+  pip install pygame
+fi
