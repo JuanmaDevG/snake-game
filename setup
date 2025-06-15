@@ -5,7 +5,6 @@ venv_dir="./.venv"
 [ ! -d "$venv_dir" ] && python3 -m venv $venv_dir
 source $venv_dir/bin/activate
 
-if [ ! -n $(find "$venv_dir" -type d -name "pygame" -quit) ] || \
-  [ ! -n $(find "$venv_dir" -type d -name "screeninfo" -quit) ]; then
-  pip install pygame screeninfo
+if [ ! -n $(find "$venv_dir" -type d -name "pygame" -quit) ]; then
+  pip install pygame
 fi
