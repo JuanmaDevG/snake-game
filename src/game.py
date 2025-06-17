@@ -113,9 +113,14 @@ class Map:
         draw_food.food_radius = self.px_boxwidth // 2
 
 
-    def repoint_inbounds(p: Point):
+    def is_inbounds(p: Point) -> bool:
         if p.x >= 0 and p.x < self.width and p.y <= 0 and p.y < self.height:
-            return
+            return True
+        return False
+
+
+    def repoint_inbounds(p: Point):
+        if is_inbounds(p): return
         p.x = p.x % self.width
         p.y = p.y % self.height
 
@@ -125,30 +130,50 @@ class Map:
             repoint_inbounds(p)
 
 
+    def get_px_loc(p: Point) -> Point:
+        if not is_inbounds(p): return Null
+        return Point(m.px_drawpoint.x + (p.x * m.px_boxwidth), m.px_drawpoint.y + (p.y * m.px_boxwidth))
+
+
 def reloc_food(food: Point, m: Map, *players: Snake):
     food.reloc(randint(0, m.width -1), randint(0, m.height -1))
-    #TODO: food does not collide
+    for pl in players:
+        for p in pl.points:
+            if food == p:
+                food.reloc(randint(0, m.width -1), randint(0, m.height -1))
 
 
-def draw_arrow(sf: pg.Surface, box_loc: Point, d: Direction, m: Map):
+#TODO: this function and generalize arrow geometry
+def draw_arrow(sf: pg.Surface, px_boxloc: Point, d: Direction, m: Map):
+    offsets = [
+            m.px_boxwidth // 2,
+            m.px_boxwidth // 3,
+            (m.px_boxwidth // 3) * 2,
+            m.px_boxwidth -2]
+
+    if d == Direction.UP:
+        polygon = [
+                Vector2(px_boxloc.x + offsets[0], px_boxloc.y + offset[3]),
+                Vector2(px_boxloc.x + offsets[1], px_boxloc.y + offset[3]),
+                Vector2(px_boxloc.x + offsets[2], px_boxloc.y + offset[3]),
+                Vector2(px_boxloc.x + offsets[0], px_boxloc.y + offsets[0])]
+    elif d == Direction.RIGHT:
+        polygon = [
+                Vector2(px_boxloc.x + m.px_boxwidth -2, px_boxloc.y + offset[0]),
+                Vector2(px_boxloc.x + offsets[1], px_boxloc.y + m.px_boxwidth -2),
+                Vector2(px_boxloc.x + offsets[2], px_boxloc.y + m.px_boxwidth -2),
+                Vector2(px_boxloc.x + offsets[0], px_boxloc.y + offsets[0])]
+    elif d == Direction.DOWN:
+        pass
+    elif d == Direction.LEFT:
+        pass
+
+
 def draw_snake(sf: pg.Surface, m: Map, s: Snake):
     for p in s.points:
-        pg.draw.rect(sf, 
-                     (255, 255, 0),
-                     pg.Rect(m.px_drawpoint.x + (p.x * m.px_boxwidth),
-                             m.px_drawpoint.y + (p.y * m.px_boxwidth),
-                             m.px_boxwidth,
-                             m.px_boxwidth))
-    #Draw the direction arrow
-    head = s.points[0]
-    pg.draw.polygon(sf,
-                    (255, 0, 0),
-                    [Vector2(m.px_drawpoint.x + (p.x * m.px_boxwidth) + (m.px_boxwidth // 2),
-                             m.px_drawpoint.y + (p.y * m.px_boxwidth) + 2),
-                     Vector2(m.px_drawpoint.x + (p.x * m.px_boxwidth) + (m.px_boxwidth // 3),
-                             m.px_drawpoint.y + (p.y * m.px_boxwidth) + (m.px_boxwidth -2)),
-                     Vector2(m.px_drawpoint.x + (p.x * m.px_boxwidth) + ((m.px_boxwidth // 3) *2),
-                             m.px_drawpoint.y + (p.y * m.px_boxwidth) + (m.px_boxwidth -2))])
+        p = m.get_px_loc(p)
+        pg.draw.rect(sf, (255, 255, 0), pg.Rect(*p, m.px_boxwidth, m.px_boxwidth))
+    draw_arrow(sf, m.get_px_loc(s.points[0]), s.direction, m)
 
 
 def draw_food(sf: pg.Surface, food: Point):
@@ -172,20 +197,19 @@ async def main():
     screen = pg.display.set_mode((800, 600))
     game_map = Map(*pg.display.get_window_size())
     player = Snake(Point(randint(0, game_map.width -1), randint(0, game_map.height -1)))
-    draw_food.food_radius = game_map.px_boxwidth // 2
 
-    #TODO: generate food does not collide with snake
-    for player
-    food = Point(randint(0, game_map.width -1), randint(
+    food = Point(0,0)
+    reloc_food(food, game_map, player)
 
+    #TODO: use pg.event.get() and a locking fps clock to keep asynchronous
     for event in pg.event.wait():
         if event.type == pg.QUIT:
             pg.quit()
             exit()
 
         screen.fill("black")
-        draw_snake(player)
-        draw_food(
+        draw_snake(sf, game_map, player)
+        draw_food(screen
 
         pg.display.flip()
 
