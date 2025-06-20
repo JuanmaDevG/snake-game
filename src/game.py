@@ -1,6 +1,5 @@
 import pygame as pg
 import time
-import asyncio
 from random import randint, choice
 from collections import namedtuple
 from enum import Enum
@@ -70,11 +69,11 @@ class Snake:
 
     def collide(self):
         head = self.points[0]
-        for p in range(1, len(self.points)):
+        for p in self.points[1:] :
             if head == p:
                 self.alive = False
                 return
-    
+
 
     def redirect(self, d: Direction):
         if self.points[0].get_pivot(d) != self.points[1]:
@@ -143,54 +142,17 @@ def reloc_food(food: Point, m: Map, *players: Snake):
                 food.reloc(randint(0, m.width -1), randint(0, m.height -1))
 
 
-#TODO: this function and generalize arrow geometry
-def draw_arrow(sf: pg.Surface, px_boxloc: Point, d: Direction, m: Map):
-    offsets = [
-            m.px_boxwidth // 2,
-            m.px_boxwidth // 3,
-            (m.px_boxwidth // 3) * 2,
-            m.px_boxwidth -2]
-
-    if d == Direction.UP:
-        polygon = [
-                Vector2(px_boxloc.x + offsets[0], px_boxloc.y + offset[3]),
-                Vector2(px_boxloc.x + offsets[1], px_boxloc.y + offset[3]),
-                Vector2(px_boxloc.x + offsets[2], px_boxloc.y + offset[3]),
-                Vector2(px_boxloc.x + offsets[0], px_boxloc.y + offsets[0])]
-    elif d == Direction.RIGHT:
-        polygon = [
-                Vector2(px_boxloc.x + m.px_boxwidth -2, px_boxloc.y + offset[0]),
-                Vector2(px_boxloc.x + offsets[1], px_boxloc.y + m.px_boxwidth -2),
-                Vector2(px_boxloc.x + offsets[2], px_boxloc.y + m.px_boxwidth -2),
-                Vector2(px_boxloc.x + offsets[0], px_boxloc.y + offsets[0])]
-    elif d == Direction.DOWN:
-        pass
-    elif d == Direction.LEFT:
-        pass
-
-
 def draw_snake(sf: pg.Surface, m: Map, s: Snake):
     for p in s.points:
         p = m.get_px_loc(p)
         pg.draw.rect(sf, (255, 255, 0), pg.Rect(*p, m.px_boxwidth, m.px_boxwidth))
-    draw_arrow(sf, m.get_px_loc(s.points[0]), s.direction, m)
 
 
 def draw_food(sf: pg.Surface, food: Point):
     pg.draw.circle(sf, (0, 0, 255), Vector2(*food), draw_food.food_radius)
 
 
-#TODO: make custom event to send event queue
-async def run_player(sf: pg.Surface, player: Snake, game_map: Map, food: Point):
-    draw_call = pygame.event.custom_type()
-    while player.alive:
-        await asyncio.sleep(0.5)
-        player.move()
-        if player.points[0] == food:
-        pygame.event.post(draw_call)
-
-
-async def main():
+def main():
     pg.init()
     pg.font.init()
     pg.display.set_caption("Snake game")
@@ -202,16 +164,16 @@ async def main():
     reloc_food(food, game_map, player)
 
     #TODO: use pg.event.get() and a locking fps clock to keep asynchronous
-    for event in pg.event.wait():
-        if event.type == pg.QUIT:
-            pg.quit()
-            exit()
+    while player.alive :
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+                exit()
+            #TODO: event control
 
+        player.move()
         screen.fill("black")
         draw_snake(sf, game_map, player)
-        draw_food(screen
-
+        draw_food(screen, food)
         pg.display.flip()
-
-
-asyncio.run(main())
+        time.sleep(0.5)
