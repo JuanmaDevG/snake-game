@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 import pygame as pg
 import time
 from random import randint, choice
 from collections import namedtuple
 from enum import Enum
-from __future__ import annotations
 from pygame.math import Vector2
 
 #TODO: futurely, calculate least common multiple in map constructor for perfect screen proportion on each box
@@ -15,19 +16,25 @@ class Direction(Enum):
     LEFT = (-1, 0)
     UP = (0, -1)
 
-    INVERSE: dict[Direction, Direction] = {
-        Direction.RIGHT : Direction.LEFT,
-        Direction.DOWN : Direction.UP,
-        Direction.LEFT : Direction.RIGHT,
-        Direction.UP : Direction.DOWN,
-    }
 
-    FROM_KEY: dict[int, Direction] = {
-        pg.K_UP : Direction.UP,
-        pg.K_DOWN : Direction.DOWN,
-        pg.K_LEFT : Direction.LEFT,
-        pg.K_DOWN : Direction.DOWN
-    }
+INVERSE_DIRECTION: dict[Direction, Direction] = {
+    Direction.RIGHT : Direction.LEFT,
+    Direction.DOWN : Direction.UP,
+    Direction.LEFT : Direction.RIGHT,
+    Direction.UP : Direction.DOWN,
+}
+
+
+DIRECTION_FROM_KEY: dict[int, Direction] = {
+    pg.K_UP : Direction.UP,
+    pg.K_DOWN : Direction.DOWN,
+    pg.K_LEFT : Direction.LEFT,
+    pg.K_DOWN : Direction.DOWN,
+    pg.K_w : Direction.UP,
+    pg.K_a : Direction.LEFT,
+    pg.K_s : Direction.DOWN,
+    pg.K_d : Direction.RIGHT
+}
 
 
 class Point:
@@ -43,15 +50,16 @@ class Point:
     def __eq__(self, p: Point):
         return self.x == p.x and self.y == p.y
 
-    def move(d: Direction):
-        self.x, self.y = direction.value
+    def move(self, d: Direction):
+        self.x += d.value[0]
+        self.y += d.value[1]
 
     def get_pivot(self, d: Direction) -> Point:
         p = Point(*self)
         p.move(d)
         return p
 
-    def reloc(x: int, y: int):
+    def reloc(self, x: int, y: int):
         self.x, self.y = x, y
 
 
@@ -62,7 +70,7 @@ class Snake:
         self.score = 0
         self.alive = True
 
-        inv_direction = Direction.INVERSE[self.direction]
+        inv_direction = INVERSE_DIRECTION[self.direction]
         for i in range(length):
             self.points.append(Point(*self.points[i], inv_direction))
 
@@ -94,9 +102,9 @@ class Map:
     def __init__(self, px_width: int, px_height: int):
         self.px_uiheight = px_height // 10
         self.px_boxwidth = (px_height if px_height < px_width else px_width) // 40
-        self.width = px_width // px_boxwidth
-        self.height = px_height // px_boxwidth
-        self.px_drawpoint = Point((px_width % px_boxwidth) // 2, (px_height % px_boxheight) // 2)
+        self.width = px_width // self.px_boxwidth
+        self.height = px_height // self.px_boxwidth
+        self.px_drawpoint = Point((px_width % self.px_boxwidth) // 2, (px_height % self.px_boxwidth) // 2)
         self.cur_font = pg.font.Font(pg.font.get_default_font(), size=(self.px_uiheight // 2))
         draw_food.food_radius = self.px_boxwidth // 2
 
@@ -112,25 +120,25 @@ class Map:
         draw_food.food_radius = self.px_boxwidth // 2
 
 
-    def is_inbounds(p: Point) -> bool:
+    def is_inbounds(self, p: Point) -> bool:
         if p.x >= 0 and p.x < self.width and p.y <= 0 and p.y < self.height:
             return True
         return False
 
 
-    def repoint_inbounds(p: Point):
+    def repoint_inbounds(self, p: Point):
         if is_inbounds(p): return
         p.x = p.x % self.width
         p.y = p.y % self.height
 
 
-    def repoint_snake(s: Snake):
+    def repoint_snake(self, s: Snake):
         for p in s.points:
             repoint_inbounds(p)
 
 
-    def get_px_loc(p: Point) -> Point:
-        if not is_inbounds(p): return Null
+    def get_px_loc(self, p: Point) -> Point:
+        if not self.is_inbounds(p): return None
         return Point(m.px_drawpoint.x + (p.x * m.px_boxwidth), m.px_drawpoint.y + (p.y * m.px_boxwidth))
 
 
@@ -163,17 +171,22 @@ def main():
     food = Point(0,0)
     reloc_food(food, game_map, player)
 
-    #TODO: use pg.event.get() and a locking fps clock to keep asynchronous
     while player.alive :
         for event in pg.event.get():
-            if event.type == pg.QUIT:
+            if event.type == pg.KEYUP:
+                player.redirect(DIRECTION_FROM_KEY[event.key])
+            elif event.type == pg.VIDEORESIZE:
+                game_map.dynamic_resize()
+            elif event.type == pg.QUIT:
                 pg.quit()
                 exit()
-            #TODO: event control
 
         player.move()
         screen.fill("black")
-        draw_snake(sf, game_map, player)
+        draw_snake(screen, game_map, player)
         draw_food(screen, food)
         pg.display.flip()
         time.sleep(0.5)
+
+if __name__ == "__main__":
+    main()
