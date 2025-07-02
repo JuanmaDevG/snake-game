@@ -124,13 +124,13 @@ class Map:
         draw_food.food_radius = self.px_boxwidth // 2
 
 
-    def dynamic_resize():
+    def dynamic_resize(self):
         px_width, px_height = pg.display.get_window_size()
         self.px_uiheight = px_height // 10
         self.px_boxwidth = (px_height if px_height < px_width else px_width) // 40
-        self.width = px_width // px_boxwidth
-        self.height = px_height // px_boxwidth
-        self.map_drawpoint = Point((px_width % px_boxwidth) // 2, (px_height % px_boxheight) // 2)
+        self.width = px_width // self.px_boxwidth
+        self.height = px_height // self.px_boxwidth
+        self.map_drawpoint = Point((px_width % self.px_boxwidth) // 2, (px_height % self.px_boxwidth) // 2)
         self.cur_font = pg.font.Font(pg.font.get_default_font(), size=(self.px_uiheight // 2))
         draw_food.food_radius = self.px_boxwidth // 2
 
@@ -172,6 +172,7 @@ def draw_snake(sf: pg.Surface, m: Map, s: Snake):
 
 
 def draw_food(sf: pg.Surface, game_map: Map, food: Point):
+    game_map.repoint_inbounds(food)
     food_loc = game_map.get_px_loc(food)
     food_loc.x += game_map.px_boxwidth // 2
     food_loc.y += game_map.px_boxwidth // 2
@@ -182,7 +183,7 @@ def main():
     pg.init()
     pg.font.init()
     pg.display.set_caption("Snake game")
-    screen = pg.display.set_mode((800, 600))
+    screen = pg.display.set_mode((800, 600), pg.RESIZABLE)
     game_map = Map(*pg.display.get_window_size())
     player = Snake(Point(randint(0, game_map.width -1), randint(0, game_map.height -1)))
 
@@ -191,7 +192,7 @@ def main():
 
     while player.alive :
         for event in pg.event.get():
-            if event.type == pg.KEYUP:
+            if event.type == pg.KEYDOWN:
                 if event.key in DIRECTION_FROM_KEY:
                     player.redirect(DIRECTION_FROM_KEY[event.key])
             elif event.type == pg.VIDEORESIZE:
