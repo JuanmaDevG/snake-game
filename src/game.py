@@ -50,6 +50,12 @@ class Point:
     def __eq__(self, p: Point):
         return self.x == p.x and self.y == p.y
 
+    def __sub__(self, other: Point) -> Point:
+        return Point(self.x - other.x, self.y - other.y)
+
+    def __add__(self, other: Point) -> Point:
+        return Point(self.x + other.x, self.y + other.y)
+
     def move(self, d: Direction):
         self.x += d.value[0]
         self.y += d.value[1]
@@ -98,6 +104,15 @@ class Snake:
             prevp.reloc(*nextp)
 
 
+    def eat(self, food: Point) -> bool :
+        if self.points[0] == food:
+            new_tailblock = self.points[len(self.points) -1] + (self.points[len(self.points) -1] - self.points[len(self.points) -2])
+            self.points.append(new_tailblock)
+            self.score += 1
+            return True
+        return False
+
+
 class Map:
     def __init__(self, px_width: int, px_height: int):
         self.px_uiheight = px_height // 10
@@ -121,25 +136,25 @@ class Map:
 
 
     def is_inbounds(self, p: Point) -> bool:
-        if p.x >= 0 and p.x < self.width and p.y <= 0 and p.y < self.height:
+        if p.x >= 0 and p.x < self.width and p.y >= 0 and p.y < self.height:
             return True
         return False
 
 
     def repoint_inbounds(self, p: Point):
-        if is_inbounds(p): return
+        if self.is_inbounds(p): return
         p.x = p.x % self.width
         p.y = p.y % self.height
 
 
     def repoint_snake(self, s: Snake):
         for p in s.points:
-            repoint_inbounds(p)
+            self.repoint_inbounds(p)
 
 
     def get_px_loc(self, p: Point) -> Point:
         if not self.is_inbounds(p): return None
-        return Point(m.px_drawpoint.x + (p.x * m.px_boxwidth), m.px_drawpoint.y + (p.y * m.px_boxwidth))
+        return Point(self.px_drawpoint.x + (p.x * self.px_boxwidth), self.px_drawpoint.y + (p.y * self.px_boxwidth))
 
 
 def reloc_food(food: Point, m: Map, *players: Snake):
@@ -156,8 +171,11 @@ def draw_snake(sf: pg.Surface, m: Map, s: Snake):
         pg.draw.rect(sf, (255, 255, 0), pg.Rect(*p, m.px_boxwidth, m.px_boxwidth))
 
 
-def draw_food(sf: pg.Surface, food: Point):
-    pg.draw.circle(sf, (0, 0, 255), Vector2(*food), draw_food.food_radius)
+def draw_food(sf: pg.Surface, game_map: Map, food: Point):
+    food_loc = game_map.get_px_loc(food)
+    food_loc.x += game_map.px_boxwidth // 2
+    food_loc.y += game_map.px_boxwidth // 2
+    pg.draw.circle(sf, (0, 0, 255), Vector2(*food_loc), draw_food.food_radius)
 
 
 def main():
@@ -174,7 +192,8 @@ def main():
     while player.alive :
         for event in pg.event.get():
             if event.type == pg.KEYUP:
-                player.redirect(DIRECTION_FROM_KEY[event.key])
+                if event.key in DIRECTION_FROM_KEY:
+                    player.redirect(DIRECTION_FROM_KEY[event.key])
             elif event.type == pg.VIDEORESIZE:
                 game_map.dynamic_resize()
             elif event.type == pg.QUIT:
@@ -182,11 +201,15 @@ def main():
                 exit()
 
         player.move()
+        player.collide()
+        if player.eat(food):
+            reloc_food(food, game_map, player)
+        game_map.repoint_snake(player)
         screen.fill("black")
         draw_snake(screen, game_map, player)
-        draw_food(screen, food)
+        draw_food(screen, game_map, food)
         pg.display.flip()
-        time.sleep(0.5)
+        time.sleep(0.25)
 
 if __name__ == "__main__":
     main()
