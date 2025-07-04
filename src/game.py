@@ -114,14 +114,8 @@ class Snake:
 
 
 class Map:
-    def __init__(self, px_width: int, px_height: int):
-        self.px_uiheight = px_height // 10
-        self.px_boxwidth = (px_height if px_height < px_width else px_width) // 40
-        self.width = px_width // self.px_boxwidth
-        self.height = px_height // self.px_boxwidth
-        self.px_drawpoint = Point((px_width % self.px_boxwidth) // 2, (px_height % self.px_boxwidth) // 2)
-        self.cur_font = pg.font.Font(pg.font.get_default_font(), size=(self.px_uiheight // 2))
-        draw_food.food_radius = self.px_boxwidth // 2
+    def __init__(self):
+        self.dynamic_resize()
 
 
     def dynamic_resize(self):
@@ -129,8 +123,10 @@ class Map:
         self.px_uiheight = px_height // 10
         self.px_boxwidth = (px_height if px_height < px_width else px_width) // 40
         self.width = px_width // self.px_boxwidth
-        self.height = px_height // self.px_boxwidth
-        self.map_drawpoint = Point((px_width % self.px_boxwidth) // 2, (px_height % self.px_boxwidth) // 2)
+        self.height = (px_height - self.px_uiheight) // self.px_boxwidth
+        self.px_drawpoint = Point(
+                (px_width % self.px_boxwidth) // 2,
+                self.px_uiheight + ((px_height % self.px_boxwidth) // 2))
         self.cur_font = pg.font.Font(pg.font.get_default_font(), size=(self.px_uiheight // 2))
         draw_food.food_radius = self.px_boxwidth // 2
 
@@ -184,7 +180,7 @@ def main():
     pg.font.init()
     pg.display.set_caption("Snake game")
     screen = pg.display.set_mode((800, 600), pg.RESIZABLE)
-    game_map = Map(*pg.display.get_window_size())
+    game_map = Map()
     player = Snake(Point(randint(0, game_map.width -1), randint(0, game_map.height -1)))
 
     food = Point(0,0)
@@ -202,10 +198,10 @@ def main():
                 exit()
 
         player.move()
+        game_map.repoint_snake(player)
         player.collide()
         if player.eat(food):
             reloc_food(food, game_map, player)
-        game_map.repoint_snake(player)
         screen.fill("black")
         draw_snake(screen, game_map, player)
         draw_food(screen, game_map, food)
