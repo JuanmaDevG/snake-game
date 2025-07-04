@@ -29,7 +29,7 @@ DIRECTION_FROM_KEY: dict[int, Direction] = {
     pg.K_UP : Direction.UP,
     pg.K_DOWN : Direction.DOWN,
     pg.K_LEFT : Direction.LEFT,
-    pg.K_DOWN : Direction.DOWN,
+    pg.K_RIGHT : Direction.RIGHT,
     pg.K_w : Direction.UP,
     pg.K_a : Direction.LEFT,
     pg.K_s : Direction.DOWN,
