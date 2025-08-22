@@ -99,9 +99,9 @@ class Snake:
         frontpoint = Point(0,0)
         self.points[0].move(self.direction)
         for p in self.points[1:]:
-            backpoint.reloc(*p)
-            p.reloc(*frontpoint)
-            frontpoint.reloc(*backpoint)
+            frontpoint.reloc(*p)
+            p.reloc(*backpoint)
+            backpoint.reloc(*frontpoint)
 
 
     def eat(self, food: Point) -> bool :
