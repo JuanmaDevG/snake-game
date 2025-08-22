@@ -4,7 +4,7 @@ venv_dir="./.venv"
 
 [ ! -d "$venv_dir" ] && python3 -m venv $venv_dir
 source $venv_dir/bin/activate
-
-if [ ! -n $(find "$venv_dir" -type d -name "pygame" -quit) ]; then
+if [[ "$(find $venv_dir -type d -name pygame)" != *pygame* ]]; then
   pip install pygame
 fi
+deactivate
