@@ -202,6 +202,7 @@ def main():
         player.collide()
         if player.eat(food):
             reloc_food(food, game_map, player)
+            game_map.repoint_inbounds(player.points[len(player.points) -1])
         screen.fill("black")
         draw_snake(screen, game_map, player)
         draw_food(screen, game_map, food)
